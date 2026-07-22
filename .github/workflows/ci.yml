@@ -64,7 +64,7 @@ jobs:
           subscription-id: ${{ vars.AZURE_SUBSCRIPTION_ID }}
 
       - name: Build and push the image
-        if: github.event_name == 'push'
+        if: github.event_name == 'push' 
         run: |
           az acr login --name ${{ vars.ACR }}
           IMAGE=${{ vars.ACR }}.azurecr.io/shipit:${{ github.sha }}
