@@ -55,7 +55,7 @@ jobs:
           name: test-results
           path: "**/test-results.trx"
 
-      - name: Log in to Azure (OIDC, no stored password)
+      - name: Log in to Azure (OIDC, no stored password) 
         if: github.event_name == 'push'
         uses: azure/login@v3
         with:
