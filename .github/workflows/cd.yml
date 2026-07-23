@@ -1,0 +1,31 @@
+name: CD
+on:
+  workflow_run:
+    workflows: ["CI"]        # your CI workflow (built in Module 2, pushes SHA-tagged images since Module 3)
+    types: [completed]
+    branches: [main]
+
+permissions:
+  id-token: write            # required to request an OIDC token
+  contents: read
+
+jobs:
+  deploy-staging:
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
+    runs-on: ubuntu-latest
+    environment: staging
+    env:
+      SHA: ${{ github.event.workflow_run.head_sha }}
+    steps:
+      - uses: azure/login@v3
+        with:
+          client-id: ${{ vars.AZURE_CLIENT_ID }}
+          tenant-id: ${{ vars.AZURE_TENANT_ID }}
+          subscription-id: ${{ vars.AZURE_SUBSCRIPTION_ID }}
+      - name: Deploy image to staging
+        run: |
+          az containerapp update -n shipit-staging -g "$RG" \
+            --image "$ACR.azurecr.io/shipit:$SHA"
+        env:
+          RG: ${{ vars.RG }}
+          ACR: ${{ vars.ACR }}
