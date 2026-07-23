@@ -29,3 +29,28 @@ jobs:
         env:
           RG: ${{ vars.RG }}
           ACR: ${{ vars.ACR }}
+    
+    deploy-production:
+    needs: deploy-staging
+    runs-on: ubuntu-latest
+    environment: production        # run pauses here for the required reviewer
+    env:
+      SHA: ${{ github.event.workflow_run.head_sha }}
+      RG: ${{ vars.RG }}
+      ACR: ${{ vars.ACR }}
+    steps:
+      - uses: azure/login@v3
+        with:
+          client-id: ${{ vars.AZURE_CLIENT_ID }}
+          tenant-id: ${{ vars.AZURE_TENANT_ID }}
+          subscription-id: ${{ vars.AZURE_SUBSCRIPTION_ID }}
+      - name: Record current image (for rollback)
+        id: current
+        run: |
+          PREV=$(az containerapp show -n shipit-production -g "$RG" \
+            --query "properties.template.containers[0].image" -o tsv)
+          echo "prev=$PREV" >> "$GITHUB_OUTPUT"
+      - name: Deploy new image
+        run: |
+          az containerapp update -n shipit-production -g "$RG" \
+            --image "$ACR.azurecr.io/shipit:$SHA"
